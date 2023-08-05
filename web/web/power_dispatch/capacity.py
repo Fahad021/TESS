@@ -12,8 +12,7 @@ capacity_bp = Blueprint('capacity_bp',
 @capacity_bp.route('/capacity')
 @jwt_optional
 def index():
-    has_tokens = get_jwt_identity()
-    if has_tokens:
+    if has_tokens := get_jwt_identity():
         return render_template('capacity/index.html')
     else:
         return redirect('/?access_denied=true')

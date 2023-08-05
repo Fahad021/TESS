@@ -53,13 +53,10 @@ class MeterInterval(Model):
 
         selected_intervals = MeterInterval.query.filter(
             MeterInterval.meter_interval_id.in_(interval_id_list)).all()
-        start_end_tuples_list = []
-
-        for meter_interval in selected_intervals:
-            start_end_tuples_list.append(
-                (meter_interval.start_time, meter_interval.end_time))
-
-        return start_end_tuples_list
+        return [
+            (meter_interval.start_time, meter_interval.end_time)
+            for meter_interval in selected_intervals
+        ]
 
     # Methods
     def __repr__(self):

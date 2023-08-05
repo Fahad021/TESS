@@ -12,8 +12,7 @@ auth_bp = Blueprint('auth_bp',
 @auth_bp.route('/auth', strict_slashes=False)
 @jwt_optional
 def index():
-    has_tokens = get_jwt_identity()
-    if has_tokens:
+    if has_tokens := get_jwt_identity():
         return redirect('power/capacity')
     else:
         return redirect(url_for('auth_bp.login'))

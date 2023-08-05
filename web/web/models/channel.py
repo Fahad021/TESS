@@ -21,11 +21,14 @@ class ChannelType(enum.Enum):
     def check_value(str_value):
         '''Takes in string value, returns False if it isn't an accepted enum value, else returns enum type name.'''
 
-        for channel_type in ChannelType:
-            if channel_type.value == str_value:
-                return channel_type
-
-        return False
+        return next(
+            (
+                channel_type
+                for channel_type in ChannelType
+                if channel_type.value == str_value
+            ),
+            False,
+        )
 
 
 class Channel(Model):
@@ -63,10 +66,10 @@ class ChannelSchema(SQLAlchemyAutoSchema):
         return obj.channel_type.value
 
     def load_channel_type(self, value):
-        channel_enum = ChannelType.check_value(value)
-        if not channel_enum:
+        if channel_enum := ChannelType.check_value(value):
+            return channel_enum
+        else:
             raise ValidationError(f'{value} is an invalid channel type')
-        return channel_enum
 
     class Meta:
         model = Channel

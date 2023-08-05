@@ -55,10 +55,7 @@ class Notification(Model):
         # email validation is already done on the react side for certain pages
         # this is an extra layer preventing unwanted data
         value = str(value).strip()
-        if value == '':
-            return None
-        else:
-            return value
+        return None if not value else value
 
 
     def __repr__(self):

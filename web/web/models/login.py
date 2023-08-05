@@ -51,10 +51,12 @@ class Login(UserMixin, Model):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        is_correct_password = check_password_hash(self.password_hash, password)
-        if not is_correct_password:
+        if is_correct_password := check_password_hash(
+            self.password_hash, password
+        ):
+            return is_correct_password
+        else:
             raise ValueError('Incorrect Password')
-        return is_correct_password
 
 
 ##########################
@@ -69,8 +71,7 @@ class LoginSchema(SQLAlchemyAutoSchema):
 
     # Marshmallow methods
     def create_password_hash(self, obj):
-        password_hash = generate_password_hash(obj)
-        return password_hash
+        return generate_password_hash(obj)
 
     def get_user_first_name(self, obj):
         return obj.user.first_name

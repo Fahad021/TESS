@@ -21,11 +21,10 @@ class RoleType(enum.Enum):
     def check_value(str_value):
         '''Takes in string value, returns False if it isn't an accepted enum value, else returns enum type.'''
 
-        for role_type in RoleType:
-            if role_type.value == str_value:
-                return role_type
-
-        return False
+        return next(
+            (role_type for role_type in RoleType if role_type.value == str_value),
+            False,
+        )
 
 
 class Role(Model):
@@ -55,10 +54,10 @@ class RoleSchema(SQLAlchemyAutoSchema):
         return obj.name.value
 
     def load_role_type(self, value):
-        role_enum = RoleType.check_value(value)
-        if not role_enum:
+        if role_enum := RoleType.check_value(value):
+            return role_enum
+        else:
             raise ValidationError(f'{value} is an invalid role type')
-        return role_enum
 
     class Meta:
         model = Role

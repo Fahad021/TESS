@@ -25,11 +25,7 @@ class Status(enum.Enum):
     def check_value(str_value):
         '''Takes in string value, returns False if it isn't an accepted enum value, else returns enum type.'''
 
-        for status in Status:
-            if status.value == str_value:
-                return status
-
-        return False
+        return next((status for status in Status if status.value == str_value), False)
 
 
 class ContextType(enum.Enum):
@@ -42,11 +38,14 @@ class ContextType(enum.Enum):
     def check_value(str_value):
         '''Takes in string value, returns False if it isn't an accepted enum value, else returns enum type.'''
 
-        for context_type in ContextType:
-            if context_type.value == str_value:
-                return context_type
-
-        return False
+        return next(
+            (
+                context_type
+                for context_type in ContextType
+                if context_type.value == str_value
+            ),
+            False,
+        )
 
 
 class Alert(Model):
@@ -89,15 +88,15 @@ class Alert(Model):
     def get_filter_type(self):
         '''Returns filter type as a string for alert frontend set-up'''
 
-        if self.alert_type.name.value == 'Import Capacity' \
-            or self.alert_type.name.value == 'Export Capacity' \
-                or self.alert_type.name.value == 'Load Yellow' \
-                    or self.alert_type.name.value == 'Load Red':
+        if self.alert_type.name.value in [
+            'Import Capacity',
+            'Export Capacity',
+            'Load Yellow',
+            'Load Red',
+        ]:
             return 'Capacity bounds'
 
-        if self.alert_type.name.value == 'Price Yellow' \
-            or self.alert_type.name.value == 'Price Red' \
-                or self.alert_type.name.value == 'Price':
+        if self.alert_type.name.value in ['Price Yellow', 'Price Red', 'Price']:
             return 'Price alerts'
 
         if self.alert_type.name.value == 'Telecomm':
@@ -122,12 +121,10 @@ class Alert(Model):
         elif self.alert_type.name.value == 'Price':
             message = f'TESS is observing a price alert at ${self.alert_type.limit}/MW.'
 
-        elif self.alert_type.name.value == 'Load Yellow' \
-            or self.alert_type.name.value == 'Load Red':
+        elif self.alert_type.name.value in ['Load Yellow', 'Load Red']:
             message = f'TESS {self.alert_type.name.value} alert: {self.context.value} {self.context_id} is above {self.alert_type.limit}% capacity at {self.created_at}.'
 
-        elif self.alert_type.name.value == 'Price Yellow' \
-            or self.alert_type.name.value == 'Price Red':
+        elif self.alert_type.name.value in ['Price Yellow', 'Price Red']:
             message = f'TESS {self.alert_type.name.value} alert: {self.context.value} {self.context_id} is above {self.alert_type.limit}% of the alert price at {self.created_at}.'
 
         elif self.alert_type.name.value == 'Import Capacity':
@@ -188,16 +185,16 @@ class AlertSchema(SQLAlchemyAutoSchema):
         return obj.status.value
 
     def load_status(self, value):
-        status_enum = Status.check_value(value)
-        if not status_enum:
+        if status_enum := Status.check_value(value):
+            return status_enum
+        else:
             raise ValidationError(f'{value} is an invalid Status')
-        return status_enum
 
     def load_context_type(self, value):
-        context_type_enum = ContextType.check_value(value)
-        if not context_type_enum:
+        if context_type_enum := ContextType.check_value(value):
+            return context_type_enum
+        else:
             raise ValidationError(f'{value} is an invalid Context Type')
-        return context_type_enum
 
     class Meta:
         model = Alert

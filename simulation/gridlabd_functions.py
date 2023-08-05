@@ -35,16 +35,10 @@ def on_init(t):
 
 	# Gets the list of active home hubs (!!!! does not filter for active == in the TESS database YET)
 	hh_list = requests.get(db_address+'home_hubs').json()['results']['data']
-	hh_ids = []
-	for hh in hh_list:
-		hh_ids += [hh['home_hub_id']]
-	
+	hh_ids = [hh['home_hub_id'] for hh in hh_list]
 	# Creates house objects for each active home hub
 	global houses;
-	houses = []
-	for hh_id in hh_ids:
-		houses += [HHfct.create_agent_house(hh_id)]
-
+	houses = [HHfct.create_agent_house(hh_id) for hh_id in hh_ids]
 	#Create WS supplier object
 	global retailer;
 	retailer = WSSupplier()
@@ -68,18 +62,15 @@ def on_precommit(t):
 	# Run market only every interval
 
 	global LEM_operator;
-	if not ((dt_sim_time.second%interval == 0)): # and (dt_sim_time.minute % (LEM_operator.interval/60) == 0)):
-		return t
-
-	else: #interval in minutes #is not start time
-		print('Start precommit: '+str(dt_sim_time))
+	if dt_sim_time.second%interval == 0:
+		print(f'Start precommit: {str(dt_sim_time)}')
 
 		############
 		# Physical info : physical model --> TESS DB
 		############
 
 		if gld_simulation:
-			
+
 			# Read out states of house / appliances
 
 			for house in houses: # only for PV so far - other appliances placeholder in MVP
@@ -92,9 +83,9 @@ def on_precommit(t):
 				#if house.EVCP:
 				#	gldimport.simulate_EVs(house.name,dt_sim_time)
 				#	gldimport.update_CP_state(house.EVCP.name,dt_sim_time)
-			
+
 			# Read out system information
-			
+
 			gldimport.get_systemstate(dt_sim_time) # External information : system / grid # --> TABLE transformer_meter
 
 		############
@@ -122,16 +113,17 @@ def on_precommit(t):
 
 		#Market processes bids and clears the market
 		#lem.process_bids(dt_sim_time) # only needed if separate sending and processing of bids (not the case if identical DB for meter_interval and market)
-		
+
 		lem.clear_lem(dt_sim_time)
 
 		#HHs determine dispatch based on price
-		
-		if dispatch_mode: # Applies market results to DB for implementation
-			for house in houses:
+
+		for house in houses:
+					#HHs determine dispatch based on price
+					
+			if dispatch_mode: # Applies market results to DB for implementation
 				house.determine_dispatch(dt_sim_time)
-		else:
-			for house in houses:
+			else:
 				house.default(dt_sim_time)
 
 		lem.reset()
@@ -148,4 +140,4 @@ def on_precommit(t):
 				if house.PV:
 					gldimport.dispatch_PV(house.PV,dt_sim_time)
 
-		return t
+	return t

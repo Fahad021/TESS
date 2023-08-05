@@ -13,7 +13,11 @@ DeltaT = pandas.Timestamp(start_time_str) - pandas.Timestamp(start_time_db) # Ti
 
 # Market settings
 market_id = 1
-interval = int(requests.get(db_address+'markets?market_id='+str(market_id)).json()['results']['data'][0]['ts'])
+interval = int(
+    requests.get(f'{db_address}markets?market_id={market_id}').json()[
+        'results'
+    ]['data'][0]['ts']
+)
 transformer_id = 1
 p_max = 100.0
 C = 'random' # for testing

@@ -54,12 +54,9 @@ def on_precommit(t):
 
 	#Run market only every five minutes
 	dt_sim_time = parser.parse(gridlabd.get_global('clock')).replace(tzinfo=None)
-	if not (dt_sim_time.second == 0):
-		return t
-	
-	else: #interval in minutes #is not start time
+	if dt_sim_time.second == 0:
 		print('Full minute precommit; now we wait for 10s')
 		#print(requests.get(db_address+'meter_intervals').json())
 		time.sleep(10)
 		print('10s are over')
-		return t
+	return t

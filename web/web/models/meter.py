@@ -26,11 +26,14 @@ class MeterType(enum.Enum):
     def check_value(str_value):
         '''Takes in string value, returns False if it isn't an accepted enum value, else returns enum type name.'''
 
-        for meter_type in MeterType:
-            if meter_type.value == str_value:
-                return meter_type
-
-        return False
+        return next(
+            (
+                meter_type
+                for meter_type in MeterType
+                if meter_type.value == str_value
+            ),
+            False,
+        )
 
 
 class Meter(Model):
@@ -76,18 +79,18 @@ class Meter(Model):
             returns the interval count (integer) between start / end times, inclusively'''
 
         self_intervals = self.meter_intervals
-        selected_intervals = []
-
-        if start == None:
+        if start is None:
             start = datetime.now() - timedelta(days=1)
 
-        if end == None:
+        if end is None:
             end = datetime.now()
 
-        for meter_interval in self_intervals:
-            if meter_interval.start_time >= start and meter_interval.end_time <= end:
-                selected_intervals.append(meter_interval)
-
+        selected_intervals = [
+            meter_interval
+            for meter_interval in self_intervals
+            if meter_interval.start_time >= start
+            and meter_interval.end_time <= end
+        ]
         return len(selected_intervals)
 
     def get_rates(self):
@@ -111,11 +114,10 @@ class Meter(Model):
     def get_all_intervals(self):
         '''Returns all meter instances's intervals in a list'''
 
-        intervals_list = []
-        for meter_interval in self.meter_intervals:
-            intervals_list.append(meter_interval.meter_interval_id)
-
-        return intervals_list
+        return [
+            meter_interval.meter_interval_id
+            for meter_interval in self.meter_intervals
+        ]
 
     def __repr__(self):
         return f'<Meter meter_id={self.meter_id} is_active={self.is_active}>'
@@ -157,10 +159,10 @@ class MeterSchema(SQLAlchemyAutoSchema):
         return obj.meter_type.value
 
     def load_meter_type(self, value):
-        meter_enum = MeterType.check_value(value)
-        if not meter_enum:
+        if meter_enum := MeterType.check_value(value):
+            return meter_enum
+        else:
             raise ValidationError(f'{value} is an invalid meter type')
-        return meter_enum
 
     def get_rates(self, obj):
         return obj.get_rates()
@@ -176,10 +178,8 @@ class MeterSchema(SQLAlchemyAutoSchema):
         return MeterInterval.get_interval_coverage(coverage)
 
     def get_user_id(self, obj):
-        users = obj.service_location.address.users
-        if users:
-            user_ids = [ user.id for user in users ]
-            return user_ids
+        if users := obj.service_location.address.users:
+            return [ user.id for user in users ]
         return []
 
     class Meta:

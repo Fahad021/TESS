@@ -37,7 +37,7 @@ def on_init(t):
 		houses = []
 	else:
 		houses = gldimport.find_objects('class=house')[:flexible_houses]
-	
+
 	#global df_house_state;
 	#df_house_state = HHfct.get_settings_houses(houses,interval)
 
@@ -74,7 +74,7 @@ def on_init(t):
 	df_prices = pandas.DataFrame(columns=['clearing_price','clearing_quantity','unresponsive_loads','slack_t-1'])
 	df_WS = pandas.read_csv('glm_generation_'+city+'/'+market_data,parse_dates=[-1],index_col=[0])
 	df_WS = pandas.DataFrame(index=pandas.to_datetime(df_WS.index.astype(str)),columns=df_WS.columns,data=df_WS.values.astype(float))
-	
+
 	#Align weekdays of Pecan Street Data and WS: For yearly data only (TESS, not powernet)
 	# year_sim = parser.parse(gridlabd.get_global('clock')).replace(tzinfo=None).year
 	# first_weekday = pandas.Timestamp(year_sim,1,1).weekday() 
@@ -85,7 +85,7 @@ def on_init(t):
 	# df_WS =df_WS.iloc[:(365*24*12)] #Should not be hardcoded
 	# df_WS.index = pandas.date_range(pandas.Timestamp(year_sim,1,1,0),pandas.Timestamp(year_sim,12,31,23,55),freq='5min')
 
-	print('Initialize finished after '+str(time.time()-t0))
+	print(f'Initialize finished after {str(time.time() - t0)}')
 	return True
 
 def init(t):

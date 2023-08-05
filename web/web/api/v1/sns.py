@@ -28,5 +28,4 @@ def parse_real_power(message):
     '''
     payload_str = message.payload.decode('UTF-8')
     payload = ast.literal_eval(payload_str)
-    power_data = payload['DeviceInformation'][0]['sunnyboy_inverter.calc_ac_power_kw']
-    return power_data
+    return payload['DeviceInformation'][0]['sunnyboy_inverter.calc_ac_power_kw']

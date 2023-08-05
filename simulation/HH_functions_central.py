@@ -188,7 +188,7 @@ def set_HVAC_by_award(dt_sim_time,df_house_state,market,df_awarded_bids):
 def bid_rule_HVAC(house, mean_p, var_p, interval):
 	control_type = gridlabd_functions.get(house,'control_type')['value']
 	k = float(gridlabd_functions.get(house,'k')['value'][1:])
-	
+
 	T_c_set = float(gridlabd_functions.get(house,'T_c_set_0')['value'][1:])
 	T_h_set = float(gridlabd_functions.get(house,'T_h_set_0')['value'][1:])
 	#T_curr = float(gridlabd_functions.get(house,'air_temperature')['value'][1:-5])
@@ -198,27 +198,22 @@ def bid_rule_HVAC(house, mean_p, var_p, interval):
 
 	#State of appliance in previous period
 	status = int(gridlabd_functions.get(house,'state')['value'])
-	
+
 	if 'deadband' in control_type:
 		# cooling
 		if T_curr > T_c_set + k:
 			bid_price = 1
-			bid_quantity = hvac_q	
-			gridlabd_functions.set(house,'bid_mode','COOL')		
-			return bid_quantity, bid_price, status
-		# heating
+			bid_quantity = hvac_q
+			gridlabd_functions.set(house,'bid_mode','COOL')
 		elif T_curr < T_h_set - k:
 			bid_price = 1
-			bid_quantity = heat_q	
-			gridlabd_functions.set(house,'bid_mode','HEAT')			
-			return bid_quantity, bid_price, status
-		# no activity
+			bid_quantity = heat_q
+			gridlabd_functions.set(house,'bid_mode','HEAT')
 		else:
 			bid_price = 0
 			bid_quantity = 0
-			gridlabd_functions.set(house,'bid_mode','NONE')	
-			return bid_quantity, bid_price, status
-	
+			gridlabd_functions.set(house,'bid_mode','NONE')
+		return bid_quantity, bid_price, status
 	elif 'trans' in control_type:
 		# Non-bid region size between cooling and heating [F]
 		epsilon = 2
@@ -302,13 +297,9 @@ def set_HVAC_setpoint(house,control_type,bid_price,Pd):
 				gridlabd_functions.set(house,'system_mode','HEAT')
 			else:
 				print('Check bid mode - there might be an inconsistency in bidding and actual behavior')
-			return
 		else:
 			#turn off HVAC
 			gridlabd_functions.set(house,'system_mode','OFF')
-			#gridlabd_functions.set('control_1','control','OFF')
-			return
-
 	elif ('trans' in control_type): 
 
 		m = float(gridlabd_functions.get(house,'m')['value'])
@@ -325,7 +316,7 @@ def set_HVAC_setpoint(house,control_type,bid_price,Pd):
 				gridlabd_functions.set(house,'cooling_setpoint',T_max)
 			else:
 				gridlabd_functions.set(house,'cooling_setpoint',T_c_set_new)
-		
+
 		elif 'HEAT' in gridlabd_functions.get(house,'bid_mode')['value']:
 			gridlabd_functions.set(house,'system_mode','HEAT')
 			#calculate new setpoint
@@ -336,7 +327,6 @@ def set_HVAC_setpoint(house,control_type,bid_price,Pd):
 				gridlabd_functions.set(house,'heating_setpoint',T_h_set_new)
 		else:
 			gridlabd_functions.set(house,'system_mode','OFF')
-		return
 	else:
 		print('HVAC could not be set')
-		return
+	return

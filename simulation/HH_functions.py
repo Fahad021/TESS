@@ -102,17 +102,16 @@ class House:
 	# Determine `mode' in response to market result
     def determine_dispatch(self,dt_sim_time):
 		#HH reads price from market DB
-        df_lem = requests.get(db_address+'market_intervals').json()['results']['data'][-1]
-        p_lem = df_lem['p_clear']
-        alpha = df_lem['alpha']
+    	df_lem = requests.get(db_address+'market_intervals').json()['results']['data'][-1]
+    	p_lem = df_lem['p_clear']
+    	alpha = df_lem['alpha']
 		#self.HVAC.dispatch(dt_sim_time,p_lem,alpha)
-        try:
-            self.PV.dispatch(dt_sim_time,p_lem,alpha)
-        except:
-            data = requests.get(db_address+'/meter_intervals?meter_id='+str(self.PV.meter)).json()['results']['data'][-1]
-            data['mode'] = 1.0
-            requests.put(db_address+'meter_interval/'+str(data['meter_interval_id']),json=data)
-            pass
+    	try:
+    		self.PV.dispatch(dt_sim_time,p_lem,alpha)
+    	except:
+    		data = requests.get(db_address+'/meter_intervals?meter_id='+str(self.PV.meter)).json()['results']['data'][-1]
+    		data['mode'] = 1.0
+    		requests.put(db_address+'meter_interval/'+str(data['meter_interval_id']),json=data)
 		#self.battery.dispatch(dt_sim_time,p_lem,alpha)
 		#self.EVCP.dispatch(dt_sim_time,p_lem,alpha)
 
@@ -172,42 +171,41 @@ class HVAC:
         return
 
     def bid(self,dt_sim_time,market,P_exp,P_dev):
-        if self.T_air <= self.T_des:
-            T_ref = self.T_min
-        else:
-            T_ref = self.T_max
-        if self.mode == 'COOL':
-            m = -1
-            Q_bid = self.cooling_demand
-        elif self.mode == 'HEAT':
-            m = 1
-            Q_bid = self.heating_demand
-        else:
-            m = 0
-            Q_bid = 0.0
-        P_bid = P_exp - 3*np.sign(m)*P_dev*(self.T_air - self.T_des)/abs(T_ref - self.T_des)
-        self.P_bid = P_bid
-        self.Q_bid = Q_bid
+    	T_ref = self.T_min if self.T_air <= self.T_des else self.T_max
+    	if self.mode == 'COOL':
+    	    m = -1
+    	    Q_bid = self.cooling_demand
+    	elif self.mode == 'HEAT':
+    	    m = 1
+    	    Q_bid = self.heating_demand
+    	else:
+    	    m = 0
+    	    Q_bid = 0.0
+    	P_bid = P_exp - 3*np.sign(m)*P_dev*(self.T_air - self.T_des)/abs(T_ref - self.T_des)
+    	self.P_bid = P_bid
+    	self.Q_bid = Q_bid
 
 		#write P_bid, Q_bid to market DB
-        import sys; sys.exit('HVAC table not available yet')
-        if (Q_bid > 0.0) and not (self.mode == 'OFF'):
-            timestamp_arrival = market.send_demand_bid(dt_sim_time, float(P_bid), float(Q_bid), 'HVAC_'+self.name) #Feedback: timestamp of arrival #C determined by market_operator
-        return
+    	import sys
+    	sys.exit('HVAC table not available yet')
+    	if Q_bid > 0.0 and self.mode != 'OFF':
+    		timestamp_arrival = market.send_demand_bid(dt_sim_time, float(P_bid), float(Q_bid), 'HVAC_'+self.name) #Feedback: timestamp of arrival #C determined by market_operator
+    	return
 
     def dispatch(self,dt_sim_time,p_lem,alpha):
-        import sys; sys.exit('HVAC dispatch not implemented yet')
-        if (self.Q_bid > 0.0) and (self.P_bid > p_lem):
-            gridlabd.set_value(self.name,'system_mode',self.mode)
-            operating_mode = self.mode
-        elif (self.Q_bid > 0.0) and (self.P_bid == p_lem):
-            print('This HVAC is marginal; no partial implementation yet: '+str(alpha))
-            gridlabd.set_value(self.name,'system_mode',self.mode)
-            operating_mode = self.mode
-        else:
-            gridlabd.set_value(self.name,'system_mode','OFF')
-            operating_mode = 'OFF'
-        myfct.set_values(self.name+'_state_out', '(timedate, operating_mode, p_HVAC)', (dt_sim_time, operating_mode, str(self.P_bid)))
-        self.P_bid = 0.0
-        self.Q_bid = 0.0
+    	import sys
+    	sys.exit('HVAC dispatch not implemented yet')
+    	if (self.Q_bid > 0.0) and (self.P_bid > p_lem):
+    		gridlabd.set_value(self.name,'system_mode',self.mode)
+    		operating_mode = self.mode
+    	elif (self.Q_bid > 0.0) and (self.P_bid == p_lem):
+    		print(f'This HVAC is marginal; no partial implementation yet: {str(alpha)}')
+    		gridlabd.set_value(self.name,'system_mode',self.mode)
+    		operating_mode = self.mode
+    	else:
+    		gridlabd.set_value(self.name,'system_mode','OFF')
+    		operating_mode = 'OFF'
+    	myfct.set_values(self.name+'_state_out', '(timedate, operating_mode, p_HVAC)', (dt_sim_time, operating_mode, str(self.P_bid)))
+    	self.P_bid = 0.0
+    	self.Q_bid = 0.0
 

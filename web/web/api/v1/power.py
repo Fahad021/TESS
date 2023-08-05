@@ -29,7 +29,7 @@ def get_power_system_load():
         return arw.to_json(None, 400)
 
     value_range = 30
-    base = datetime.datetime.today()
+    base = datetime.datetime.now()
     date_time_range = [
         base + datetime.timedelta(days=x) for x in range(value_range)
     ]

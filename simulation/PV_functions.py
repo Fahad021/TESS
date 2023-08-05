@@ -31,10 +31,7 @@ class PV:
       # Bids generation to the market
       def bid(self,dt_sim_time,market,P_exp,P_dev):
             self.P_bid = 0.0 # At zero marginal cost
-            if self.alpha > 0.0: # Use latest measurement as estimate for generation in future period
-                  self.Q_bid = self.Qmtp / self.alpha
-            else:
-                  self.Q_bid = self.Q_rated
+            self.Q_bid = self.Qmtp / self.alpha if self.alpha > 0.0 else self.Q_rated
             if (self.Q_bid > 0.0):
                   market.sell(self.Q_bid ,self.P_bid,gen_name=self.id)
             last_meter_id = requests.get(db_address+'/meter_intervals?meter_id='+str(self.meter)).json()['results']['data'][-1]['meter_interval_id']
@@ -71,5 +68,5 @@ def get_PV(house,hh_id):
                   pv = PV(pv['pv_id'],pv['meter_id'],pv['q_rated'])
                   house.PV = pv
                   return house
-      print('No PV registered by hh '+str(hh_id))
+      print(f'No PV registered by hh {str(hh_id)}')
       return house

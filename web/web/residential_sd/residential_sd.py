@@ -11,8 +11,7 @@ residential_sd_bp = Blueprint('residential_sd_bp',
 @residential_sd_bp.route('/')
 @jwt_optional
 def index():
-    has_tokens = get_jwt_identity()
-    if has_tokens:
+    if has_tokens := get_jwt_identity():
         return render_template('residential_sd/index.html')
     else:
         return redirect('/?access_denied=true')

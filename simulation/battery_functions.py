@@ -45,10 +45,7 @@ class Battery:
 
       def bid(self,dt_sim_time,market,P_exp,P_dev):
             #Sell bid
-            if self.soc_rel <= self.soc_des:
-                  soc_ref = self.soc_min
-            else:
-                  soc_ref = 1.0
+            soc_ref = self.soc_min if self.soc_rel <= self.soc_des else 1.0
             p_buy_bid = P_exp + 3*self.k*P_dev*(self.soc_rel - self.soc_des)/abs(soc_ref - self.soc_des)
 
             #Buy bid
@@ -75,12 +72,12 @@ class Battery:
             if (self.Q_buy_bid > 0.0) and (self.P_buy_bid > p_lem):
                   gridlabd.set_value(inverter,'P_Out',str(-self.Q_buy_bid*1000.))
             elif (self.Q_buy_bid > 0.0) and (self.P_buy_bid == p_lem):
-                  print('This HVAC is marginal; no partial implementation yet: '+str(alpha))
+                  print(f'This HVAC is marginal; no partial implementation yet: {str(alpha)}')
                   gridlabd.set_value(inverter,'P_Out',str(-self.Q_buy_bid*1000.))
             elif (self.Q_sell_bid > 0.0) and (self.P_sell_bid < p_lem):
                   gridlabd.set_value(inverter,'P_Out',str(self.Q_sell_bid*1000.))
             elif (self.Q_sell_bid > 0.0) and (self.P_sell_bid == p_lem):
-                  print('This HVAC is marginal; no partial implementation yet: '+str(alpha))
+                  print(f'This HVAC is marginal; no partial implementation yet: {str(alpha)}')
                   gridlabd.set_value(inverter,'P_Out',str(self.Q_sell_bid*1000.))
             else:
                   gridlabd.set_value(inverter,'P_Out',str(0.0))
@@ -97,12 +94,12 @@ def get_battery(house,house_name):
             df_battery_settings = myfct.get_values_td(battery_name + '_settings')
       except:
             df_battery_settings = pandas.DataFrame()
-      #batteries = []
-      #for i in df_battery_settings.index: #if multiple batteries
-      i = 0
       if len(df_battery_settings) > 0:
             battery = Battery(battery_name)
             battery.name = battery_name
+            #batteries = []
+            #for i in df_battery_settings.index: #if multiple batteries
+            i = 0
             #import pdb; pdb.set_trace()
             battery.SOC_min = df_battery_settings['soc_min'].iloc[i]
             battery.SOC_max = df_battery_settings['SOC_max'].iloc[i]

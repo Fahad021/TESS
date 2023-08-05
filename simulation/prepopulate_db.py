@@ -44,7 +44,12 @@ requests.post(db_address+'transformer',json=data)
 
 #Address
 for user_no in range(1,no_users+1):
-	data = {'address':'Main Street '+str(user_no),'city':'Aspen','country':'US','postal_code':'00000'}
+	data = {
+		'address': f'Main Street {str(user_no)}',
+		'city': 'Aspen',
+		'country': 'US',
+		'postal_code': '00000',
+	}
 	requests.post(db_address+'address',json=data,auth=(user_name,pw))
 	#address = requests.get(db_address+'addresses').json()
 	#Service location

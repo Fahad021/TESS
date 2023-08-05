@@ -141,10 +141,11 @@ def simulate_EVs(house_name,dt_sim_time):
 	online_t = EV_obj['generator_status']
 	CP_inv_name = 'EV_inverter'+house_name[5:]
 
-	if dt_sim_time.hour >= 0 and dt_sim_time.hour <= 19:
-		if online_t == 'OFFLINE':
-			arrival = numpy.random.choice([True,False],p=[10/60.,1. - 10/60.])
-			if arrival:
+	if online_t == 'OFFLINE':
+		if dt_sim_time.hour >= 0 and dt_sim_time.hour <= 19:
+			if arrival := numpy.random.choice(
+				[True, False], p=[10 / 60.0, 1.0 - 10 / 60.0]
+			):
 				#Actual physical parameters
 				gridlabd.set_value(EV_name,'generator_status','ONLINE')
 				soc = numpy.random.uniform(0.2,0.8)
@@ -158,8 +159,8 @@ def simulate_EVs(house_name,dt_sim_time):
 				DeltaE = max(numpy.random.choice(numpy.arange(5.,30.,5.),p=[1/5.]*5),(1.-soc)*100.)
 				gridlabd.set_value(EV_name,'DeltaE',str(DeltaE))
 				gridlabd.set_value(CP_inv_name,'EV_connected',str(1))				
-	
-	if online_t == 'ONLINE':
+
+	elif online_t == 'ONLINE':
 		#EV_obj = gridlabd.get_object(EV_name) #get new departure time
 		if pandas.to_datetime(EV_obj['tdep']) < dt_sim_time:
 			gridlabd.set_value(EV_name,'generator_status','OFFLINE')
@@ -193,7 +194,7 @@ def update_house_state(house_name,dt_sim_time):
 
 # Measures current power at PV inverter
 def update_PV_state(PV,dt_sim_time):
-	PV_obj = gridlabd.get_object('PV_'+str(PV.id)) # In GLD, this is actually the state from one interval before
+	PV_obj = gridlabd.get_object(f'PV_{str(PV.id)}')
 
 	Qmtp = float(PV_obj['P_Out'][1:].split('+')[0])/1000. # W -> kW
 	E = Qmtp/(3600./interval)
@@ -263,11 +264,11 @@ def dispatch_PV(PV,dt_sim_time):
 	#Should refer to DB and not to python object
 	if PV.mode == 1:
 		# No constraint
-		gridlabd.set_value('PV_'+str(PV.id),'P_Out',str(PV.Q_bid)) #What if larger?
+		gridlabd.set_value(f'PV_{str(PV.id)}', 'P_Out', str(PV.Q_bid))
 	elif PV.mode > 0:
-		gridlabd.set_value('PV_'+str(PV.id),'P_Out',str(PV.Q_bid*PV.mode))
+		gridlabd.set_value(f'PV_{str(PV.id)}', 'P_Out', str(PV.Q_bid*PV.mode))
 	else:
-		gridlabd.set_value('PV_'+str(PV.id),'P_Out','0.0')
+		gridlabd.set_value(f'PV_{str(PV.id)}', 'P_Out', '0.0')
 
 ###############
 # System Operator
@@ -285,7 +286,7 @@ def get_systemstate(dt_sim_time):
 		available_capacity = C
 	data = {'transformer_id':transformer_id,'feeder':'IEEE123','capacity':available_capacity}
 	requests.put(db_address+'transformer/'+str(transformer_id), json=data)
-	
+
 	# Used capacity
 
 	load_SLACK = float(gridlabd.get_object('node_149')['measured_real_power'][:-2])/1000. # measured_real_power in [W] --> [kW]
@@ -296,10 +297,7 @@ def get_systemstate(dt_sim_time):
 
 	if market_data == 'random':
 		p = numpy.random.uniform()
-		if p > 1.0/20.0:
-			supply_cost = 0.05
-		else:
-			supply_cost = 0.2
+		supply_cost = 0.05 if p > 1.0/20.0 else 0.2
 	else:
 		import sys; sys.exit('External market data not implemented yet')
 	data = {'start_time':str(dt_sim_time),'end_time':str(dt_sim_time+pandas.Timedelta(seconds=interval)),'p_bid':p,'q_bid':available_capacity,'is_supply':True,'comment':'','market_id':market_id}

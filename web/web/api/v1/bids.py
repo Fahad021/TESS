@@ -42,9 +42,7 @@ def get_bids():
             if start_time:
                 hb = hb.filter(HceBids.start_time >= start_time)
                 mi = mi.filter(MeterInterval.start_time >= start_time)
-            results.append(hb_schema.dump(hb, many=True))
-            results.append(mi_schema.dump(mi, many=True))
-
+            results.extend((hb_schema.dump(hb, many=True), mi_schema.dump(mi, many=True)))
         else:
             arw.add_errors('is_supply query param is required')
 
@@ -57,10 +55,7 @@ def get_bids():
     except NoResultFound:
         arw.add_errors('No result found')
 
-    if arw.has_errors():
-        return arw.to_json(None, 400)
-
-    return arw.to_json(results)
+    return arw.to_json(None, 400) if arw.has_errors() else arw.to_json(results)
 
 
 @bids_api_bp.route('/bids', methods=['POST'])

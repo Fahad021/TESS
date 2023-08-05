@@ -78,10 +78,7 @@ def on_init(t):
 
 	#MARKET: Create house agents
 	global houses;
-	houses = []
-	for house_name in houses_names:
-		houses += [HHfct.create_agent_house(house_name)]
-
+	houses = [HHfct.create_agent_house(house_name) for house_name in houses_names]
 	#Create WS supplier
 	global retailer;
 	retailer = WSSupplier()
@@ -90,7 +87,7 @@ def on_init(t):
 	global LEM_operator;
 	LEM_operator = MarketOperator(interval,p_max)
 
-	print('Initialize finished after '+str(time.time()-t0))
+	print(f'Initialize finished after {str(time.time() - t0)}')
 	return True
 
 def init(t):
@@ -104,11 +101,8 @@ def on_precommit(t):
 
 	#Run market only every five minutes
 	global LEM_operator;
-	if not ((dt_sim_time.second == 0) and (dt_sim_time.minute % (LEM_operator.interval/60) == 0)):
-		return t
-	
-	else: #interval in minutes #is not start time
-		print('Start precommit: '+str(dt_sim_time))
+	if ((dt_sim_time.second == 0) and (dt_sim_time.minute % (LEM_operator.interval/60) == 0)):
+		print(f'Start precommit: {str(dt_sim_time)}')
 
 		############
 		#Imitates physical process of arrival
@@ -132,7 +126,7 @@ def on_precommit(t):
 				gldimport.update_battery_state(house.battery.name,dt_sim_time)
 			if house.EVCP:
 				gldimport.update_CP_state(house.EVCP.name,dt_sim_time)
-		
+
 		global retailer;
 		gldimport.get_slackload(dt_sim_time)
 		gldimport.get_WSprice(dt_sim_time)
@@ -176,7 +170,7 @@ def on_precommit(t):
 			if house.PV:
 				gldimport.dispatch_PV(house.PV.name,dt_sim_time)
 
-		return t
+	return t
 
 def on_term(t):
 	print('Simulation ended, saving results')
@@ -204,12 +198,11 @@ def saving_results():
 	#Saving globals
 	file = 'HH_global.py'
 	new_file = results_folder+'/HH_global.py'
-	glm = open(file,'r') 
-	new_glm = open(new_file,'w') 
-	j = 0
-	for line in glm:
-	    new_glm.write(line)
-	glm.close()
+	with open(file,'r') as glm:
+		new_glm = open(new_file,'w')
+		j = 0
+		for line in glm:
+		    new_glm.write(line)
 	new_glm.close()
 
 	#Saving mysql databases

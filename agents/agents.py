@@ -10,10 +10,7 @@ import matplotlib.pyplot as plt
 import pydoc
 
 def get_default(args,key,default):
-    if key in args.keys():
-        return args[key]
-    else:
-        return default
+    return args[key] if key in args.keys() else default
 
 def get_price_history(**kwargs):
     """Get the price history
@@ -37,16 +34,20 @@ def get_price_history(**kwargs):
     diurnal price curve minimizes around 6am and maximizes around 6pm.
     """
     source = get_default(kwargs,'source','random')
-    if source == 'random':
-        Pexp = get_default(kwargs,'Pexp',50)
-        Pdev = get_default(kwargs,'Pdev',5)
-        N = get_default(kwargs,'N',288)
-        ts = get_default(kwargs,'ts',5)
-        noise = get_default(kwargs,'noise',0.0)
-        data = Pexp - (Pdev-noise) * np.sin(np.arange(0,N)/(24*60/ts)*2*np.pi) * np.sqrt(2) + 2*np.sqrt(2)*np.random.normal(0,noise,N)
-    else:
+    if source != 'random':
         raise Exception(f"source {source} is not available")
-    return data
+    Pexp = get_default(kwargs,'Pexp',50)
+    Pdev = get_default(kwargs,'Pdev',5)
+    N = get_default(kwargs,'N',288)
+    ts = get_default(kwargs,'ts',5)
+    noise = get_default(kwargs,'noise',0.0)
+    return (
+        Pexp
+        - (Pdev - noise)
+        * np.sin(np.arange(0, N) / (24 * 60 / ts) * 2 * np.pi)
+        * np.sqrt(2)
+        + 2 * np.sqrt(2) * np.random.normal(0, noise, N)
+    )
 
 def get_price_expectation(data,N=288):
     """Get the price expectation and standard deviation
@@ -92,17 +93,14 @@ def get_hvac_bid(Pexp,Pdev,mode,Tobs,Tdes,Tmin,Tmax,Khvac,Qmode):
         offer (real) - bid price (in tokens/MWh)
         quantity (non-negative real) - bid quantity (in MW)
     """
-    if Tobs < Tmin : 
+    if Tobs < Tmin: 
         Pbid = np.sign(mode)*np.Infinity
         Qbid = None
     elif Tobs > Tmax : 
         Pbid = -np.sign(mode)*np.Infinity
         Qbid = None
     else:
-        if Tobs < Tdes : 
-            Tref = Tmin
-        else : 
-            Tref = Tmax 
+        Tref = Tmin if Tobs < Tdes else Tmax
         Pbid = Pexp - 3 * np.sign(mode) * Pdev * Khvac * (Tobs-Tdes)/np.abs(Tref-Tdes)
         Qbid = np.mean(Qmode)
     return {"offer":Pbid,"quantity":Qbid}
@@ -161,10 +159,7 @@ def get_battery_bid(Pexp,Pdev,Eobs,Edes,Emin,Emax,Qmax,Kes):
         offer (real) - bid price (in tokens/MWh)
         quantity (non-negative real) - bid quantity (in MW)
     """
-    if Eobs < Edes:
-        Eref = Emin
-    else:
-        Eref = Emax
+    Eref = Emin if Eobs < Edes else Emax
     Pbid = Pexp + 3*Kes*Pdev*(Eobs-Edes)/abs(Eref-Edes)
     return {"offer":Pbid,"quantity":Qmax}
 
@@ -189,10 +184,7 @@ def get_battery_ask(Pexp,Pdev,Eobs,Edes,Emin,Emax,Qmax,Kes,ts,Res,Ces):
         ask (real) - ask price (in tokens/MWh)
         quantity (non-negative real) - ask quantity (in MW)
     """
-    if Eobs < Edes:
-        Eref = Emin
-    else:
-        Eref = Emax
+    Eref = Emin if Eobs < Edes else Emax
     Poc = Pexp + 3*Kes*Pdev*(Eobs-Edes+Qmax*ts)/abs(Eref-Edes-Qmax*ts)
     Pask = Poc/Res + Ces/pow(Edes/Emax+0.4,2)
     return {"ask":Pask,"quantity":Qmax}

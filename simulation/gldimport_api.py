@@ -158,10 +158,11 @@ def simulate_EVs(house_name,dt_sim_time):
 	online_t = EV_obj['generator_status']
 	CP_inv_name = 'EV_inverter'+house_name[5:]
 
-	if dt_sim_time.hour >= 0 and dt_sim_time.hour <= 19:
-		if online_t == 'OFFLINE':
-			arrival = numpy.random.choice([True,False],p=[10/60.,1. - 10/60.])
-			if arrival:
+	if online_t == 'OFFLINE':
+		if dt_sim_time.hour >= 0 and dt_sim_time.hour <= 19:
+			if arrival := numpy.random.choice(
+				[True, False], p=[10 / 60.0, 1.0 - 10 / 60.0]
+			):
 				#Actual physical parameters
 				gridlabd.set_value(EV_name,'generator_status','ONLINE')
 				soc = numpy.random.uniform(0.2,0.8)
@@ -175,8 +176,8 @@ def simulate_EVs(house_name,dt_sim_time):
 				DeltaE = max(numpy.random.choice(numpy.arange(5.,30.,5.),p=[1/5.]*5),(1.-soc)*100.)
 				gridlabd.set_value(EV_name,'DeltaE',str(DeltaE))
 				gridlabd.set_value(CP_inv_name,'EV_connected',str(1))				
-	
-	if online_t == 'ONLINE':
+
+	elif online_t == 'ONLINE':
 		#EV_obj = gridlabd.get_object(EV_name) #get new departure time
 		if pandas.to_datetime(EV_obj['tdep']) < dt_sim_time:
 			gridlabd.set_value(EV_name,'generator_status','OFFLINE')
@@ -312,10 +313,10 @@ def get_WSprice(dt_sim_time):
 ###############
 
 def sort_list(unsorted_list):
-	sorted_list = []
 	if unsorted_list:
 		no = [int(x.split('_')[-1]) for x in unsorted_list]
 		d = dict(zip(no,unsorted_list))
+		sorted_list = []
 		for i in range(1,max(no)+1):
 			try:
 				sorted_list.append(d[i])
@@ -344,16 +345,10 @@ def sort_batteries(batteries):
 	return batterylist, EVlist
 
 def sort_pvs(pvs):
-	pvlist_unsorted = [];
-
-	#Batteries not ordered accoridng to house numbers
-	for pv in pvs:
-		pvlist_unsorted.append(pv)
-
 	#Sort PVs
-	
+
 	pv_list = []
-	if pvlist_unsorted:
+	if pvlist_unsorted := list(pvs):
 		pvlist_no = [int(x.split('_')[-1]) for x in pvlist_unsorted]
 		d = dict(zip(pvlist_no,pvlist_unsorted))
 		for i in range(1,max(pvlist_no)+1):
@@ -362,10 +357,5 @@ def sort_pvs(pvs):
 			except:
 				pass
 
-	pvinv_list = []
-	for pv in pv_list:
-		#inverter_name = gridlabd_functions.get(pv,'parent')
-		inverter_name = 'PV_inverter_' + pv[3:]
-		pvinv_list += [inverter_name]
-
+	pvinv_list = ['PV_inverter_' + pv[3:] for pv in pv_list]
 	return pv_list, pvinv_list

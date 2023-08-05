@@ -59,18 +59,12 @@ class User(UserMixin, Model):
     def get_roles(self):
         '''Returns list of user role objects'''
 
-        roles = []
-        for group in self.groups:
-            roles.append(group.role)
-        return roles
+        return [group.role for group in self.groups]
 
     def does_user_role_exist(self, role_name):
         '''Returns true or false whether user has assigned role'''
 
-        for group in self.groups:
-            if group.role.name.value == role_name:
-                return True
-        return False
+        return any(group.role.name.value == role_name for group in self.groups)
 
     def __repr__(self):
         return f'<User id={self.id} email_id={self.email}>'
@@ -96,10 +90,7 @@ class UserSchema(SQLAlchemyAutoSchema):
     # Marshmallow methods
     def get_roles(self, obj):
         roles = obj.get_roles()
-        result_roles = []
-        for role in roles:
-            result_roles.append(role.name.value)
-        return result_roles
+        return [role.name.value for role in roles]
 
     def get_postal_code(self, obj):
         address = {

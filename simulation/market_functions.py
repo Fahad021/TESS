@@ -31,8 +31,7 @@ class MarketOperator:
         self.mode = 'normal' #else: emergency
 
     def create_market(self,name=None):
-        market = Market(Pmax = self.Pmax)
-        return market
+        return Market(Pmax = self.Pmax)
 
 class Market :
 
@@ -117,7 +116,7 @@ class Market :
 
         #Submit
         for ind in df_supply_bids.index:
-            if not df_supply_bids['gen_name'].loc[ind] == 'WS_supply':
+            if df_supply_bids['gen_name'].loc[ind] != 'WS_supply':
                 self.sell(df_supply_bids['q_bid'].loc[ind],df_supply_bids['p_bid'].loc[ind],gen_name=df_supply_bids['gen_name'].loc[ind])
             else:
                 self.sell(C,df_supply_bids['p_bid'].loc[ind],gen_name=df_supply_bids['gen_name'].loc[ind])
@@ -137,9 +136,7 @@ class Market :
 
         # Re-calculate expected price and variance
         list_dict_lem = requests.get(db_address+'market_intervals').json()['results']['data'][-price_intervals:] # place holder
-        prices = []
-        for lem in list_dict_lem:
-            prices += [lem['p_clear']]
+        prices = [lem['p_clear'] for lem in list_dict_lem]
         if len(prices) == 1:
             P_exp = mean(prices)
             P_dev = 1.
@@ -151,7 +148,7 @@ class Market :
             P_dev = 1.
 
         # Post
-        print('Market result in ' + str(dt_sim_time) + ': ' + str(Pd) + ' USD/MWh, ' + str(Qd) + ' kW')
+        print(f'Market result in {str(dt_sim_time)}: {str(Pd)} USD/MWh, {str(Qd)} kW')
         data = {'market_id':market_id,'p_exp':P_exp,'p_dev':P_dev,'p_clear':Pd,'q_clear':Qd,'alpha':alpha,'start_time':str(dt_sim_time),'end_time':str(dt_sim_time+pandas.Timedelta(seconds=interval))}
         requests.post(db_address+'market_interval',json=data)
         return 
@@ -209,7 +206,7 @@ class Market :
     # dP = P supply - P demand constraint (default is 0)
     #
     # Returns market status
-    def clear(self,dQ=0.0,dP=0.0,df_time=None) :
+    def clear(self,dQ=0.0,dP=0.0,df_time=None):
 
 #        #Sets P_max if none is given
 #        if self.Pmax is None:
@@ -220,10 +217,10 @@ class Market :
 #                self.Pmax = 100.0
 #            else:
 #                self.Pmax = P_all.max()
-        if 0 > self.Pmax :
+        if self.Pmax < 0:
             self.status = 2
             raise ValueError('Pmax has not been set or is negative')
-            
+
         if self.Pmin >= self.Pmax :
             self.status = 2
             raise ValueError('market Pmin is not less than Pmax')
@@ -243,7 +240,7 @@ class Market :
         self.partial = partial
         return self.status, df_time
 
-    def clear_trivial(self,dQ,dP) :
+    def clear_trivial(self,dQ,dP):
         """
         returns the Quantity, Price clearing point of a market with all response levels at 0.
         """
@@ -251,10 +248,9 @@ class Market :
         #print "The length of D", len(self.D)
         #print "The length of S", len(self.S)
         isSZero = isDZero = False
-        #If return without setting status, data is "stale" is that what it should do?
-        if len(self.S) == 0 and len(self.D) == 0 :
-            return 0, 0
-        if len(self.S) == 0 :
+        if len(self.S) == 0:
+            if len(self.D) == 0:
+                return 0, 0
             #print "isSZero set"
             isSZero = True
         if len(self.D) == 0 :
@@ -262,7 +258,7 @@ class Market :
             isDZero = True
 
         t0 = time.time()
-        if isSZero is False:
+        if not isSZero:
             St = array([[0.0,0.0,0.0,None]]+self.S) #temporarily insert line to keep types of elements
             St = St[1:,:]
             S = St[argsort(St.T[0],0)]
@@ -281,7 +277,7 @@ class Market :
             self.Sp = Sp
 
         # sort the demand bids
-        if isDZero is False :
+        if not isDZero:
             #Dt = array(self.D)
             Dt = array([[0.0,0.0,0.0,None]]+self.D) #temporarily insert line to keep types of elements
             Dt = Dt[1:,:]
@@ -291,7 +287,7 @@ class Market :
             # rebuild demand curve
             Dq = [0]
             Dp = [self.Pmax]
-            for n,m in enumerate(D) :
+            for m in D:
                 Dq = append(append(Dq, Dq[-1]),m[1]+Dq[-1])
                 Dp = append(append(Dp, m[0]),m[0])
                 m[1] = Dq[-1]
@@ -307,49 +303,50 @@ class Market :
         j = 0 # seller index
         v = 0 # verify flag
         a = b = 0.0
-        if isDZero is False :
+        if not isDZero:
             a = D[0][0]
-        if isSZero is False :
+        if not isSZero:
             b = S[0][0]
         Q = 0.0
         nb = len(self.D)
         ns = len(self.S)
 
         partial = 'S' # Default
-        while ( i < nb ) and ( j < ns ) and ( D[i][0] >= S[j][0] ) : #loop until Price demand/supply is >= 1
-            if D[i][1] > S[j][1] : #Quantity Demanded > Quantity Selling
+        while ( i < nb ) and ( j < ns ) and ( D[i][0] >= S[j][0] ): #loop until Price demand/supply is >= 1
+            if D[i][1] > S[j][1]: #Quantity Demanded > Quantity Selling
                 Q = S[j][1]
                 partial = 'D' #Last supply bid full, last demand bid only partially served
                 a = b = D[i][0]
-                j = j+1
+                j += 1
                 v = 0
-            elif D[i][1] < S[j][1] : #Quantity Buying < Quantity Selling
+            elif D[i][1] < S[j][1]: #Quantity Buying < Quantity Selling
                 Q = D[i][1]
                 partial = 'S' #Last demand bid full, last supply bid only partially served
                 a = b = S[j][0]
-                i = i+1
+                i += 1
                 v = 0
-            else :
+            else:
                 Q = D[i][1]
                 a = D[i][0]
                 b = S[j][0]
-                i = i+1
-                j = j+1
+                i += 1
+                j += 1
                 v = 1 #set flag once the two Quantities equal
         if partial == 'D':
-            if D.shape[0] > 1:
-                alpha = (Q - D[i-1][1])/(D[i][1] - D[i-1][1])
-            else:
-                alpha = (Q)/(D[i][1])
+            alpha = (
+                (Q - D[i - 1][1]) / (D[i][1] - D[i - 1][1])
+                if D.shape[0] > 1
+                else (Q) / (D[i][1])
+            )
         elif partial == 'S':
-            if S.shape[0] > 1:
-                #import pdb; pdb.set_trace()
-                alpha = (Q - S[j-1][1])/(S[j][1] - S[j-1][1])
-            else:
-                alpha = (Q)/(S[j][1])
+            alpha = (
+                (Q - S[j - 1][1]) / (S[j][1] - S[j - 1][1])
+                if S.shape[0] > 1
+                else (Q) / (S[j][1])
+            )
         else:
             alpha = 1.0 #Last bid can be 100%
-        
+
         t2 = time.time()
         self.D_awarded = self.D[1:max(i-1,0)+1,:] #First skipped because of axis interception
         self.S_awarded = self.S[:max(j-1,0)+1,:] #No infinite interception
@@ -366,17 +363,18 @@ class Market :
             else :
                 v = 0
         #If there are no bids, the price is set equal to the supply price
-        if isDZero :
-            P = b
-        elif isSZero :
+        if not isDZero and not isSZero and self.surplusControl is 0: #split the surplus
+            P = (a+b)/2
+        elif (
+            not isDZero
+            and not isSZero
+            and self.surplusControl is 1
+            or not isDZero
+            and isSZero
+        ): #surplus goes to the customer
             P = a
-        else: #If there are bids, then the price is set equal to the average decided on above
-            if self.surplusControl is 0: #split the surplus
-                P = (a+b)/2
-            elif self.surplusControl is 1: #surplus goes to the customer
-                P = a
-            else:  #surplus goes to the producer
-                P = b
+        else:  #surplus goes to the producer
+            P = b
         #import pdb; pdb.set_trace()
         self.status = 0
         return Q,P,partial,alpha
@@ -506,7 +504,7 @@ class Market :
     #     self.status = 0
     #     return Q,P,df_time
 
-    def clear_nontrivial(self,dQ,dP) :
+    def clear_nontrivial(self,dQ,dP):
         """
         returns the Quantity, Price clearing point of a market whose responses are not 0
         """
@@ -518,21 +516,9 @@ class Market :
         #print "self.S", self.S
         totalQd = 0
         totalQs = 0
-        S = [] #[ [self.Pmin, 0.0, 0.0], [self.Pmax, 0.0, 0.0] ]
-        #print 'S=',S
-        for s in self.S : #Copy over items in Supply list to local list
-            #print 's=',s
-            S.append(s)
-            # S = self.add_supply(S,s) #When the suppliers enter add supply the resposne curve is stripped
-            #print 'S=',S
+        S = list(self.S)
         S = sorted(S)
-        D = []#[ [self.Pmax, 0.0, 0.0], [self.Pmin, 0.0, 0.0] ]
-        #print 'D=',D
-        for d in self.D : #Copy over items in Demand list to local list
-            #print 'd=',d
-            D.append(d)
-            # D = self.add_demand(D,d)
-            #print 'D=',D
+        D = list(self.D)
         D = sorted(D)
         Q = 0.0
         P = 0.0

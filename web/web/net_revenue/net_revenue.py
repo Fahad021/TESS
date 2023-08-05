@@ -12,8 +12,7 @@ net_revenue_bp = Blueprint('net_revenue_bp',
 @net_revenue_bp.route('/')
 @jwt_optional
 def index():
-    has_tokens = get_jwt_identity()
-    if has_tokens:
+    if has_tokens := get_jwt_identity():
         return render_template('net_revenue/index.html')
     else:
         return redirect('/?access_denied=true')

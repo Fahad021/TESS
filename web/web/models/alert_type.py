@@ -33,11 +33,14 @@ class AlertName(enum.Enum):
     def check_value(str_value):
         '''Takes in string value, returns False if it isn't an accepted enum value, else returns enum type.'''
 
-        for alert_name in AlertName:
-            if alert_name.value == str_value:
-                return alert_name
-
-        return False
+        return next(
+            (
+                alert_name
+                for alert_name in AlertName
+                if alert_name.value == str_value
+            ),
+            False,
+        )
 
 
 class AlertType(Model):
@@ -91,10 +94,10 @@ class AlertTypeSchema(SQLAlchemyAutoSchema):
         return obj.name.value
 
     def load_alert_name(self, value):
-        name_enum = AlertName.check_value(value)
-        if not name_enum:
+        if name_enum := AlertName.check_value(value):
+            return name_enum
+        else:
             raise ValidationError(f'{value} is an invalid alert name')
-        return name_enum
 
     class Meta:
         model = AlertType

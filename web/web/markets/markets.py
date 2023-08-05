@@ -12,8 +12,7 @@ markets_bp = Blueprint('markets_bp',
 @markets_bp.route('/')
 @jwt_optional
 def index():
-    has_tokens = get_jwt_identity()
-    if has_tokens:
+    if has_tokens := get_jwt_identity():
         return render_template('markets/index.html')
     else:
         return redirect('/?access_denied=true')

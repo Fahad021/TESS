@@ -48,10 +48,7 @@ def set_WSmarket(df_prices):
 
 #Sets values in a database
 def set_values(market_table, parameter_string, value_tuple):
-      #mydb, mycursor = connect()
-      str_VALUE = ''
-      for el in value_tuple:
-            str_VALUE += '%s, '
+      str_VALUE = ''.join('%s, ' for _ in value_tuple)
       query = 'INSERT INTO '+market_table+parameter_string+' VALUES('+str_VALUE[:-2]+')' #(%s, %s, %s, %s)
       #print query
       mycursor.execute(query, value_tuple)
@@ -82,24 +79,19 @@ def get_values_bids(market_table, dt_sim_time):
 
 def get_values(market_table, begin=None, end=None):
       query = 'SELECT * FROM '+market_table
-      df = pandas.read_sql(query, con=mydb)   
-      return df
+      return pandas.read_sql(query, con=mydb)
 
 def get_max_value(market_table,col):
       query = 'SELECT MAX('+col+') FROM '+market_table
       mycursor.execute(query)
       for i in mycursor:
-            if i[0]:
-                  return i[0]
-            else:
-                  return 0
+            return i[0] if i[0] else 0
 
 #Gets specific value from a database (market_table is type string)
 def get_spec_value(market_table, column, condition, begin=None, end=None):
       if begin and end:
             query = 'SELECT * FROM '+market_table+' WHERE timedate >= %(begin)s AND timedate <= %(end)s'
-            df = pandas.read_sql(query, con=mydb, params={'begin': begin, 'end': end})
+            return pandas.read_sql(query, con=mydb, params={'begin': begin, 'end': end})
       else:
             query = 'SELECT * FROM '+market_table
-            df = pandas.read_sql(query, con=mydb)   
-      return df
+            return pandas.read_sql(query, con=mydb)

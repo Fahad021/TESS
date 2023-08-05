@@ -10,9 +10,7 @@ revoked_store = redis.StrictRedis(host='localhost', port=6379, db=0, decode_resp
 def check_if_token_is_revoked(decrypted_token):
     jti = decrypted_token['jti']
     entry = revoked_store.get(jti)
-    if entry is None:
-        return True
-    return entry == 'true'
+    return True if entry is None else entry == 'true'
 
 @jwt.invalid_token_loader
 @jwt.expired_token_loader

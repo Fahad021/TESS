@@ -31,7 +31,7 @@ except:
 #consumers: one DB per house
 for h in range(1,no_houses+1):
     #Settings
-    table_name = 'house_'+str(h)+'_settings'
+    table_name = f'house_{str(h)}_settings'
     try:
         #mycursor.execute('CREATE TABLE '+table_name+' (id INT AUTO_INCREMENT PRIMARY KEY, k FLOAT, T_min FLOAT, heating_setpoint FLOAT, T_max FLOAT, cooling_setpoint FLOAT, timedate TIMESTAMP)')
         mycursor.execute('CREATE TABLE '+table_name+' (timedate TIMESTAMP PRIMARY KEY, k FLOAT, T_min FLOAT, heating_setpoint FLOAT, T_max FLOAT, cooling_setpoint FLOAT)')
@@ -39,14 +39,14 @@ for h in range(1,no_houses+1):
         print('11')
         print('Error: ', e)
     #Time-dependent state variables: begin of interval
-    table_name = 'house_'+str(h)+'_state_in'
+    table_name = f'house_{str(h)}_state_in'
     try:
         mycursor.execute('CREATE TABLE '+table_name+' (timedate TIMESTAMP PRIMARY KEY, mode VARCHAR(255), T_air FLOAT, q_heat FLOAT, q_cool FLOAT)')
     except Exception as e:
         print('11')
         print('Error: ', e)
     #Time-dependent state variables: end of interval
-    table_name = 'house_'+str(h)+'_state_out'
+    table_name = f'house_{str(h)}_state_out'
     try:
         #mycursor.execute('CREATE TABLE '+table_name+' (id INT AUTO_INCREMENT PRIMARY KEY, k FLOAT, T_min FLOAT, heating_setpoint FLOAT, T_max FLOAT, cooling_setpoint FLOAT, timedate TIMESTAMP)')
         mycursor.execute('CREATE TABLE '+table_name+' (timedate TIMESTAMP PRIMARY KEY, operating_mode VARCHAR(255), p_HVAC FLOAT)')
